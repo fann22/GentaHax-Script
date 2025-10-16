@@ -1,5 +1,7 @@
 -- utils.lua
 local utils = {}
+local is_Drop_Var_Hooked = false
+local Utils_Drop_ID = nil
 
 -- extend string:split
 do
@@ -114,6 +116,24 @@ function utils.player()
     end
 
     return data
+end
+
+function utils.drop(itemId)
+    Utils_Drop_ID = itemId
+    if not is_Drop_Var_Hooked then
+        is_Drop_Var_Hooked = true
+        AddHook("OnVariant", "DropHook_648291", function(v, _)
+            if v[0] == "OnDialogRequest" and Drop_ID and
+            v[1]:find("add_textbox|How many to drop") then
+                local amount = v[1]:match("add_text_input|count||(%d+)|5|")
+                sendPacket(2, "action|dialog_return\ndialog_name|drop_item\nitemID|"..Utils_Drop_ID.."|\ncount|"..amount)
+                Utils_Drop_ID = nil
+                return true
+            end
+        end)
+        sleep(200)
+    end
+    sendPacket(2, "action|drop\n|itemID|" .. itemId .. "\n")
 end
 
 return utils
